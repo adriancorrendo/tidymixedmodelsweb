@@ -184,6 +184,11 @@ The following is just a fake data set where we have a split-splot arrangement wi
 # Read csv
 split_plot_data_0 <- read.csv(file = "../data/01_split_plot_data.csv", header = TRUE)
 
+# File online? Try this...(remove "#")
+# url_split <- "https://raw.githubusercontent.com/adriancorrendo/tidymixedmodelsweb/master/data/01_split_plot_data.csv"
+
+# split_plot_data_0 <- read.csv(url_split)
+
 # Data hierarchy
 split_plot_data <- 
   split_plot_data_0 %>% 
@@ -380,6 +385,11 @@ rm_data <-
          GROUP = case_when(TREAT == "Pristine" ~ "Pristine",
                            TRUE ~ "Agriculture")
          )
+
+# File online? Try this...(remove "#")
+# url_rm <- "https://raw.githubusercontent.com/adriancorrendo/tidymixedmodelsweb/master/data/02_split_plot_data.csv"
+
+#rm_data <- read_excel(url_rm, col_names = TRUE)
 
 ```
 
