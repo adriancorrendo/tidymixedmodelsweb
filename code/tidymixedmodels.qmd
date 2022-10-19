@@ -62,13 +62,14 @@ Well, from the hand of [Tidyverse](https://www.tidyverse.org/), the "tidy data" 
 ![](images/tidy-1.png)
 **Tidy-data structure**. Following three rules makes a dataset tidy: variables are in columns, observations are in rows, and values are in cells. Source: [@Wickham2017R].
 
+### Free HTML books
 
 ::: {layout-ncol="2"}
-Some great reading...
 
 [![](images/cover.png){height="300"}](https://r4ds.had.co.nz/)
 
 [![](images/cover-01.png){height="300"}](https://www.tmwr.org/)
+
 :::
 
 # Outline
