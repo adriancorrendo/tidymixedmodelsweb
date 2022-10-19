@@ -4,7 +4,7 @@ subtitle: "A simple guide to succeed on the analysis of common mixed models in a
 author: "Adrian Correndo"
 date: 10-19-2022
 abstract-title: 'Summary'
-abstract: 'This workshop provides a workflow to analyze common types of mixed models data in agriculture: (i) Split-Plots, and (ii) Repeated measures. From exploring the data to create a summary report with figures, we will cover how to write, test, and select from multiple candidate models at once using tidy principles and packages from the tidyverse|tidymodels framework.'
+abstract: 'This workshop provides a workflow to analyze common types of mixed models data in agriculture: (i) Split-Plots, and (ii) Repeated measures. From exploring the data to create a summary report with figures, we will cover how to write, test, and select from multiple candidate models at once using tidy principles, packages from the tidyverse|tidymodels framework, and all using the new Quarto features!'
 format:
   html:
     code-tools: true
@@ -42,11 +42,18 @@ Specifically, today we are going to cover LINEAR MIXED MODELS, which make the fo
 
 -   The **expected values** of the responses are **linear combinations** of the fixed predictor variables and the random effects.
 
--   The conditional distribution of the variable response is Gaussian (equivalently, the errors are Gaussian or "Normal").
+-   The conditional distribution of the variable response is Gaussian (equivalently, the errors are "Normal").
 
 -   The random effects are normally distributed. Normally, we assume that the expected value of a random effect is equal to zero, but with a positive variance.
 
-For more information about more types of mixed models and what options we have available in R, please, check out the new [CRAN Task View: Mixed, Multilevel, and Hierarchical Models in R](https://cran.r-project.org/web/views/MixedModels.html).
+::: callout-note
+We ar going to employ the most used packages and/or functions for `frequentist` LMMs:
+
+-   **nlme**: nlme::lme() provides REML or ML estimation. Allows multiple nested random effects, and provides structures for modeling heteroscedastic and/or correlated errors (spoiler for repeated measures analysis). This is already part of base R.
+-   **lme4**: lmer4::lmer()) provides REML or ML estimation. Allows multiple nested or crossed random effects, can compute profile confidence intervals and conduct parametric bootstrapping.
+:::
+
+For more information about mixed models in R, please, check out the new [CRAN Task View: Mixed, Multilevel, and Hierarchical Models in R](https://cran.r-project.org/web/views/MixedModels.html).
 
 # Why TIDY?
 
@@ -144,14 +151,14 @@ The broom package offer three key functions to manipulate models' outcomes:
 Split-plot arrangement is frequently used in experiments including several factors (factorial). The main characteristic is that the arrangement follows a hierarchy: there main plots (a.k.a. whole plots) covering one of the factors, and then there are "subplots" within each level of the main that include levels of a second factor, and so on. Therefore, the main plot serves as a "block" for the subplots, and thus, we are setting boundaries to ("restricting") the randomization of the subplot factor.
 
 ::: callout-important
--   DESIGN: We intentionally call split-plot "arrangement" because they can fit into multiple "designs" such as completely randomized (CRD), randomized complete blocks design (RCBD), or latin-squares design (LSD).
+-   **DESIGN**: We intentionally call split-plot "arrangement" because they can fit into multiple "designs" such as completely randomized (CRD), randomized complete blocks design (RCBD), or latin-squares design (LSD).
 
--   INFERENCE POWER: What happens with split-plot design is that the main plot has less degrees of freedom than the factor at the subplot, and thus, we have more inference power at the factor in the subplot hierarchy. So consider this before it's too late!
+-   **INFERENCE POWER**: What happens with split-plot design is that the main plot has less degrees of freedom than the factor at the subplot, and thus, we have more inference power at the factor in the subplot hierarchy (and the interaction). So consider this before it's too late!
 :::
 
 ## Create a split-plot design
 
-The *agricolae* package [@agricolae] brings a set very useful functions to generate different experimental designs, among them the split-plot. Let's see an example:
+The *agricolae* package [@agricolae] brings a set of very useful functions to generate different experimental designs, among them, the split-plot. Let's see an example:
 
 ```{r agricolae}
 
@@ -169,6 +176,8 @@ sp_design <- agricolae::design.split(trt1 = mainplot, trt2 = subplot,
 ```
 
 ## i. Data
+
+The following is just a fake data set where we have a split-splot arrangement within an RCBD (BLOCK), where at the main plot corresponds to nitrogen rate (NRATE, with 5 levels), and the subplot to wheat variety (VARIETY, with 3 levels).
 
 ```{r split_plot_data}
 
@@ -189,21 +198,46 @@ split_plot_data <-
 
 Now, let's use several functions to explore the data.
 
-For example, the `glimpse()` function from dplyr allows to take a quick look to the columns in our data frame (it's like a transposed version of `print()`)
+### a. glimpse()
 
-```{r glimpse}
+For example, the `glimpse()` function from the dplyr package [@dplyr] allows to take a quick look to the columns in our data frame (it's like a transposed version of `print()`)
+
+```{r sp_glimpse}
 
 # Glimpse from dplyr
 dplyr::glimpse(split_plot_data)
 
 ```
 
-Then, the `skim()` function from the skimr package allows to take a deeper look to all the variables (columns), creating a quick summary that reports the presence of missing values, etc., etc.
+### b. skim()
 
-```{r skimr}
+Then, the `skim()` function from the skimr package [@skimr] allows to take a deeper look to all the variables (columns), creating a quick summary that reports the presence of missing values, etc., etc.
+
+```{r sp_skimr}
 
 # Skim from skimr
 skimr::skim(split_plot_data)
+
+```
+
+### c. ggplot()
+
+Of course, we shouldn't miss to use ggplot2 for a better look
+
+```{r sp_ggplot}
+
+# Boxplot
+split_plot_data %>% 
+  # Plot
+ggplot() + 
+  # Boxplots
+  geom_boxplot(aes(x = NRATE, y = YIELD, fill = VARIETY))+
+  geom_jitter(aes(x = NRATE, y = YIELD, fill = VARIETY))+
+  # Plot by site
+  facet_wrap(~VARIETY)+
+  scale_y_continuous(limits = c(0,8000), breaks = seq(0,8000, by=1000))+
+  # Change theme
+  theme_bw()
 
 ```
 
@@ -288,7 +322,6 @@ performance::check_model(split_lme4)
 
 ```{r sp_comparisons}
 
-
 # Estimate the comparisons (pairwise)
 split_lm4_comparisons <-  
   split_lme4 %>% 
@@ -320,14 +353,14 @@ For this paper, we have data from 4 different locations. We tested the levels of
 
 At each plot/sample, the STK was measured at five-consecutive soil depths (0-20, 20-40, 40-60, 60-80, and 80-100 cm). Thus, they we took "repeated measurements" over the space.
 
-We were NOT interested in comparing locations since they had very different previous history, and crop rotation, so confounding effects may have obscured the inference. Therefore, location\|site was not a factor under consideration, and all the analysis were fitted independently by site.
+We were NOT interested in comparing locations since they had very different previous history, and crop rotation, so confounding effects may have obscured the inference. Therefore, site was not a factor under consideration, and all the analysis were fitted independently by site.
 
 ## i. Data
 
 ```{r rm_data}
 
 # Read file
-data <- 
+rm_data <- 
   read_excel("../data/02_repeated_measures_data.xlsx", col_names = TRUE) %>% 
   # Create PLOT column to identify subject (Exp. Unit for Rep. Measures)
   unite(PLOT, BLOCK,TREAT, sep = "_", remove=FALSE) %>%
@@ -354,37 +387,49 @@ data <-
 
 Now, let's use several functions to explore the data.
 
+### a. glimpse()
+
 First, the `glimpse()` function from dplyr
 
 ```{r rm_glimpse}
 
 # Glimpse from dplyr
-dplyr::glimpse(data)
+dplyr::glimpse(rm_data)
 
 ```
+
+### b. skim()
 
 Then, the `skim()` function from skmir
 
 ```{r rm_skimr}
 # Skim from skimr
-skimr::skim(data)
+skimr::skim(rm_data)
 
 ```
+
+### c. ggplot()
+
+And let's use ggplot2 for a better look
 
 ```{r rm_ggplot}
 
 # Boxplot
-data %>% 
+rm_data %>% 
   dplyr::select(-depth) %>% 
   # Plot
 ggplot() + 
   # Boxplots
   geom_boxplot(aes(x = reorder(DEPTH, desc(DEPTH)), y = STK, fill = TREAT))+
+  # Axis labels
+  labs(x = "Soil depth (cm)", y = "STK (g/m2)")+
   # Plot by site
   facet_wrap(~SITE)+
   # Flip axes
   coord_flip()+
+  # Set scale type
   scale_x_discrete()+
+  # Change theme
   tidybayes::theme_tidybayes()
 
 ```
@@ -511,7 +556,7 @@ Run the candidate models
 
 
 STK_models <- 
-  data %>% 
+  rm_data %>% 
   # Let's group data to run multiple locations|datasets at once
   group_by(SITE) %>% 
   # Store the data per location using nested arrangement
@@ -608,14 +653,18 @@ Compare models performance
 best_STK_models <- 
   STK_models %>% 
   group_by(SITE) %>% 
-  mutate(best_model = case_when(AIC == min(as.numeric(AIC)) ~ "Yes",
-                                TRUE ~ "No")) %>% 
+  # Use case_when to identify the best model
+  mutate(best_model = 
+           case_when(AIC == min(as.numeric(AIC)) ~ "Yes",
+                     TRUE ~ "No")) %>% 
   ungroup()
 
 # Plot
 best_STK_models %>% 
   ggplot()+
-  geom_point(aes(x = model_id, y = as.numeric(AIC), color = best_model))+
+  geom_point(aes(x = model_id, y = as.numeric(AIC), 
+                 color = best_model, shape = best_model), 
+             size = 3)+
   facet_wrap(~SITE)
 
 # Final models
@@ -631,7 +680,7 @@ Estimate the effects of factors under study (and their interaction)
 
 models_effects <- 
   selected_models %>%
-  # Type 3 Sum of Squares (Partial SS)
+  # Type 3 Sum of Squares (Partial SS, when interactions are present)
   mutate(ANOVA = map(model, ~Anova(., type = 3)) )
 
 # Extract ANOVAS
@@ -739,7 +788,7 @@ STK_plot <-
 STK_plot
 ```
 
-**Figure 2**. Soil profiles of STK ($g m^{-2}$) under three different conditions: pristine soils (green circles), under grain cropping from 2000 to 2009 with no fertilizers added (Control, orange triangles), and under grain cropping from 2000 to 2009 with N, P, plus S fertilization (NPS, purple diamonds). Overlapping error bars indicate absence of significant differences between scenarios by soil depths combinations (Tukey's HSD, p \< 0.05).
+**Figure 2**. Soil profiles of STK ($g~m^{-2}$) under three different conditions: pristine soils (green circles), under grain cropping from 2000 to 2009 with no fertilizers added (Control, orange triangles), and under grain cropping from 2000 to 2009 with N, P, plus S fertilization (NPS, purple diamonds). Overlapping error bars indicate absence of significant differences between scenarios by soil depths combinations (Tukey's HSD, p \< 0.05).
 :::
 
 ☺
