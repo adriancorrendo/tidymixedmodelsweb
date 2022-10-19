@@ -50,7 +50,7 @@ For more information about more types of mixed models and what options we have a
 
 # Why TIDY?
 
-Well, from the hand of [Tidyverse](https://www.tidyverse.org/), the tidy data framework changed the way we code and work in R for data science. Tidy datasets are easy to manipulate, model and visualize, and have a specific structure [@wickham2014]:
+Well, from the hand of [Tidyverse](https://www.tidyverse.org/), the "tidy data" framework changed the way we code and work in R for data science. Tidy datasets are easy to manipulate, model and visualize, and have a specific structure [@wickham2014]:
 
 -   Each variable is a column,
 
@@ -58,9 +58,14 @@ Well, from the hand of [Tidyverse](https://www.tidyverse.org/), the tidy data fr
 
 -   Each value have its own cell.
 
+
 ![](images/tidy-1.png)
+**Tidy-data structure**. Following three rules makes a dataset tidy: variables are in columns, observations are in rows, and values are in cells. Source: [@Wickham2017R].
+
 
 ::: {layout-ncol="2"}
+Some great reading...
+
 [![](images/cover.png){height="300"}](https://r4ds.had.co.nz/)
 
 [![](images/cover-01.png){height="300"}](https://www.tmwr.org/)
@@ -737,7 +742,7 @@ STK_plot <-
 STK_plot
 ```
 
-**Figure 2**. Soil profiles of STK ($g m^{-2}$) under three different conditions: pristine soils (green circles), under grain cropping from 2000 to 2009 with no fertilizers added (Control, orange triangles), and under grain cropping from 2000 to 2009 with N, P, plus S fertilization (NPS, purple diamonds). Overlapping error bars indicate absence of significant differences between scenarios by soil depths combinations (Tukey's HSD, p \< 0.05).
+**Figure 2**. Soil profiles of STK ($g m^{-2}$) under three different conditions: pristine soils (green circles), under grain cropping from 2000 to 2009 with no fertilizers added (Control, orange triangles), and under grain cropping from 2000 to 2009 with N, P, plus S fertilization (NPS, purple diamonds). Overlapping error bars indicate absence of significant differences between scenarios by soil depths combinations (Tukey's HSD, p < 0.05).
 :::
 
 ☺
