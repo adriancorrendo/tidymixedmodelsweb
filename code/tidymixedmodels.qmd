@@ -47,10 +47,10 @@ Specifically, today we are going to cover LINEAR MIXED MODELS, which make the fo
 -   The random effects are normally distributed. Normally, we assume that the expected value of a random effect is equal to zero, but with a positive variance.
 
 ::: callout-note
-We ar going to employ the most used packages and/or functions for `frequentist` LMMs:
+We are going to employ the most used packages and/or functions for `frequentist` LMMs:
 
 -   **nlme**: nlme::lme() provides REML or ML estimation. Allows multiple nested random effects, and provides structures for modeling heteroscedastic and/or correlated errors (spoiler for repeated measures analysis). This is already part of base R.
--   **lme4**: lmer4::lmer()) provides REML or ML estimation. Allows multiple nested or crossed random effects, can compute profile confidence intervals and conduct parametric bootstrapping.
+-   **lme4**: lmer4::lmer() provides REML or ML estimation. Allows multiple nested or crossed random effects, can compute profile confidence intervals and conduct parametric bootstrapping.
 :::
 
 For more information about mixed models in R, please, check out the new [CRAN Task View: Mixed, Multilevel, and Hierarchical Models in R](https://cran.r-project.org/web/views/MixedModels.html).
@@ -97,7 +97,7 @@ This workflow has been created using [mermaid](https://mermaid-js.github.io/merm
 
 ## What do you need?
 
-For a complete experience, I recommend you download and install the:
+For a complete experience, I recommend you to download and install the:
 
 -   [Latest version of R](https://www.r-project.org/)
 
@@ -121,11 +121,10 @@ Quarto is a refined version (and successor) of [R-markdown](https://rmarkdown.rs
 #install.packages("easypackages") # To load and/or install the packs
 library(easypackages)
 packages("readxl") # To open/save excel files
-packages('dplyr', "tidyr","purrr", "forcats") # Data wrangling
-packages("broom", "broom.mixed") # 
-packages("stringr") # Edit text lines
+packages('dplyr', "tidyr","purrr", "forcats", "stringr") # Data wrangling
+packages("nlme", "lme4") # Mixed models libraries
+packages("broom", "broom.mixed") # Managing models results
 packages("performance") # Check assumptions and performance
-packages("nlme", "lme4") # Mixed models
 packages("emmeans","multcomp","multcompView",
          "car", "multilevelmod") # Aov and mult comp
 packages("ggplot2") # Figures
@@ -148,7 +147,7 @@ The broom package offer three key functions to manipulate models' outcomes:
 
 # 01. SPLIT-PLOT
 
-Split-plot arrangement is frequently used in experiments including several factors (factorial). The main characteristic is that the arrangement follows a hierarchy: there main plots (a.k.a. whole plots) covering one of the factors, and then there are "subplots" within each level of the main that include levels of a second factor, and so on. Therefore, the main plot serves as a "block" for the subplots, and thus, we are setting boundaries to ("restricting") the randomization of the subplot factor.
+Split-plot arrangement is frequently used in experiments including several factors (factorial). The main characteristic is that the arrangement follows a hierarchy: there are main plots (a.k.a. whole plots) covering one of the factors, and then there are "subplots" within each level of the main that include levels of a second factor, and so on. Therefore, the main plot serves as a "block" for the subplots, and thus, we are setting boundaries to ("restricting") the randomization of the subplot factor.
 
 ::: callout-important
 -   **DESIGN**: We intentionally call split-plot "arrangement" because they can fit into multiple "designs" such as completely randomized (CRD), randomized complete blocks design (RCBD), or latin-squares design (LSD).
@@ -169,9 +168,11 @@ mainplot <- c(0,50,80,110,140)
 subplot <- c("Var_1", "Var_2", "Var_3")
 
 # Produce
-sp_design <- agricolae::design.split(trt1 = mainplot, trt2 = subplot, 
+sp_design <- agricolae::design.split(
+                        trt1 = mainplot, trt2 = subplot, 
                         design = "rcbd", r = 3, 
                         randomization = TRUE, seed = 4561)
+
 
 ```
 
@@ -182,19 +183,19 @@ The following is just a fake data set where we have a split-splot arrangement wi
 ```{r split_plot_data}
 
 # Read csv
-split_plot_data_0 <- read.csv(file = "../data/01_split_plot_data.csv", header = TRUE)
+#split_plot_data_0 <- read.csv(file = "../data/01_split_plot_data.csv", header = TRUE)
 
 # File online? Try this...(remove "#")
-# url_split <- "https://raw.githubusercontent.com/adriancorrendo/tidymixedmodelsweb/master/data/01_split_plot_data.csv"
+url_split <- "https://raw.githubusercontent.com/adriancorrendo/tidymixedmodelsweb/master/data/01_split_plot_data.csv"
 
-# split_plot_data_0 <- read.csv(url_split)
+split_plot_data_0 <- read.csv(url_split)
 
 # Data hierarchy
 split_plot_data <- 
   split_plot_data_0 %>% 
   mutate(NRATE = factor(NRATE)) %>% 
   # Identify Main Plot
-  # mutate(main = factor(BLOCK:NRATE)) %>% 
+  #mutate(main = factor(BLOCK:NRATE)) %>% 
   dplyr::select(BLOCK, NRATE, VARIETY, YIELD)
 
 ```
@@ -240,7 +241,7 @@ ggplot() +
   geom_jitter(aes(x = NRATE, y = YIELD, fill = VARIETY))+
   # Plot by site
   facet_wrap(~VARIETY)+
-  scale_y_continuous(limits = c(0,8000), breaks = seq(0,8000, by=1000))+
+  scale_y_continuous(limits = c(0,10000), breaks = seq(0,10000, by=2000))+
   # Change theme
   theme_bw()
 
@@ -279,11 +280,11 @@ split_nlme <- nlme::lme(# Response variable
                    method = "REML")
 
 # Type 3 (when interaction is present)
-Anova(no_split, type = 3)
+car::Anova(split_nlme, type = 3)
 
 # Let's see the difference between models in terms of DFs
-# summary(no_split)
-# summary(split_nlme)
+#summary(no_split)
+#summary(split_nlme)
 
 ```
 
@@ -332,14 +333,14 @@ split_lm4_comparisons <-
   split_lme4 %>% 
   # ~ specifies the level of comparison (marginal or interaction)
   # Since interaction was significant we specify ~ Interaction (Factor1*Factor2)
-  emmeans(., ~NRATE*VARIETY)
+  emmeans(., ~ NRATE*VARIETY)
 
 # Add letters
 split_lm4_comparisons %>% 
   # Compact Letters Display (cld)
   cld(., 
       # Specify grouped comparisons by...
-      by = "VARIETY", 
+      #by = "NRATE", 
       # Order
       decreasing = TRUE, details=FALSE, reversed=TRUE, 
       # Specs
@@ -534,7 +535,7 @@ fit_ar1 <- function(x){lme(STK ~ TREAT + DEPTH + TREAT:DEPTH,
 
 ```
 
-#### m4. m3 + HetVar
+#### m4. m2 + HetVar
 
 Did you know that we can "relax" the assumption about homogeneity of variance? Oftentimes we have data that shows different variability depending on the level of a given factor or variable.
 
@@ -552,7 +553,7 @@ fit_corsymm_hetvar <- function(x){
         # Correlation
         correlation = corCompSymm(form = ~ depth |BLOCK/PLOT),
         # Variance
-        weights = varComb(varIdent(form=~1|GROUP)),
+        weights = varComb(varIdent(form= ~1|GROUP)),
       # Data
       data=x) }
 
@@ -563,7 +564,6 @@ fit_corsymm_hetvar <- function(x){
 Run the candidate models
 
 ```{r rm_fit}
-
 
 STK_models <- 
   rm_data %>% 
@@ -659,6 +659,7 @@ site_4_models <- STK_models %>% dplyr::filter(SITE == "site_2")
 Compare models performance
 
 ```{r rm_selection}
+
 # Visual model selection
 best_STK_models <- 
   STK_models %>% 
@@ -695,6 +696,7 @@ models_effects <-
 
 # Extract ANOVAS
 models_effects$ANOVA[[1]]
+models_effects$ANOVA[[2]]
 
 ```
 
@@ -809,11 +811,13 @@ STK_plot
 
 Adding references with Quarto has become quite easy. Let's see...
 
+This is a citation of the Tidyverse [@tidyverse] package.
+
 -   Using a **"\*.bib" file**: Figures were produced using the ggplot2 package [@ggplot_book]. Models check were tested with the performance package [@performance_paper].
 
 -   Using **Footnotes**: For example, this is some text with a Footnote[^1], this is a second Footnote[^2]
 
--   Using **visual editor**: this option introduced by Quarto is simply awesome! 🤩. Let's see. **Insert -\> Citation** or "**Crtl + Shift + F8**". With this option we can look for citations online via DOI, Crossref, etc... and insert them into our document (and to our \*.bib file).
+-   Using **visual editor**: this option introduced by Quarto is simply awesome! 🤩. Let's see. **Insert -\> Citation** or "**Crtl + Shift + F8**". With this option we can look for citations online via DOI, Crossref, etc... and insert them into our document (and to our *.bib file).
 
     ![](images/paste-62A845D2.png)
 
